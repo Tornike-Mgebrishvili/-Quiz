@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ქვიზი ქართულად</title>
+  <style>
+    body {
+      background-color: #1a1a1a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .quiz-container {
+      background: linear-gradient(145deg, #2e2e2e, #252525);
+      padding: 25px 35px;
+      border-radius: 20px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+      text-align: center;
+      max-width: 520px;
+      width: 100%;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 15px;
+      color: #f5f5f5;
+      text-shadow: 0 0 8px #d4af37;
+    }
+    img.question-image {
+      max-width: 55%;
+      height: auto;
+      border-radius: 16px;
+      margin-bottom: 18px;
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+      border: 2px solid #d4af37;
+      transition: transform 0.3s ease;
+    }
+    img.question-image:hover {
+      transform: scale(1.05);
+    }
+    .option {
+      background: #333333;
+      padding: 12px 20px;
+      margin: 10px 0;
+      border-radius: 12px;
+      cursor: pointer;
+      color: #e0d7b0;
+      font-size: 16px;
+      font-weight: 600;
+      box-shadow: inset 0 0 8px #d4af37;
+      user-select: none;
+    }
+    .option:hover {
+      background: #d4af37;
+      color: #1a1a1a;
+    }
+    .correct {
+      background-color: #4caf50;
+      border: 2px solid #2ecc71;
+      color: white;
+      box-shadow: 0 0 12px #2ecc71;
+    }
+    .incorrect {
+      background-color: #f44336;
+      border: 2px solid #e74c3c;
+      color: white;
+      box-shadow: 0 0 12px #e74c3c;
+    }
+    .hint-button {
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      padding: 12px 18px;
+      background-color: #d4af37;
+      color: #1a1a1a;
+      border: none;
+      border-radius: 50%;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    .coin-container {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      background: linear-gradient(145deg, #b38600, #d4af37);
+      border-radius: 50%;
+      padding: 18px 22px;
+      font-size: 20px;
+      color: #1a1a1a;
+      font-weight: 700;
+      user-select: none;
+    }
+    .coin-icon {
+      margin-right: 10px;
+      font-size: 26px;
+    }
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.75);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+    .popup-box {
+      background-color: #2b2b2b;
+      color: #f0e68c;
+      padding: 25px 30px;
+      border-radius: 16px;
+      text-align: center;
+      max-width: 320px;
+      width: 90%;
+      box-shadow: 0 6px 18px rgba(212, 175, 55, 0.7);
+      border: 1px solid #d4af37;
+      font-weight: 600;
+    }
+    .popup-buttons {
+      margin-top: 25px;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+    .popup-buttons button {
+      flex: 1;
+      padding: 12px 0;
+      background-color: #d4af37;
+      color: #1a1a1a;
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    #hintBox {
+      display: none;
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background-color: #3c7a3c;
+      padding: 14px 22px;
+      border-radius: 12px;
+      color: #e0f7e9;
+      font-size: 15px;
+      font-weight: 600;
+      box-shadow: 0 4px 14px rgba(60, 122, 60, 0.75);
+      z-index: 20;
+      max-width: 280px;
+      text-align: left;
+      line-height: 1.4;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    #hintBox.show {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+<div class="coin-container" id="coinContainer">
+  <span class="coin-icon">💰</span>
+  <span id="coinCount">15 მონეტა</span>
+</div>
+
+<div class="quiz-container" id="quiz"></div>
+
+<button class="hint-button" onclick="toggleHint()">💡</button>
+
+<div id="hintBox"></div>
+
+<div class="overlay" id="overlay">
+  <div class="popup-box">
+    <p>გსურთ დახარჯოთ 15 მონეტა მინიშნებისთვის?</p>
+    <div class="popup-buttons">
+      <button onclick="useHint()">კი</button>
+      <button onclick="closeOverlay()">არა</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const questions = [
+    {
+      question: "რომელ წელს მიიღო საქართველომ დამოუკიდებლობა?",
+      image: "https://upload.wikimedia.org/wikipedia/commons/0/0f/Flag_of_Georgia.svg",
+      options: ["1917", "1921", "1918", "1991"],
+      correctIndex: 2,
+      hint: "ეს მოხდა პირველი მსოფლიო ომის შემდეგ"
+    },
+    {
+      question: "რამდენჯერ მიიღო საქართველომ დამოუკიდებლობა?",
+      image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/GeorgianArmy.jpg/800px-GeorgianArmy.jpg",
+      options: ["არც ერთხელ", "4", "1", "2"],
+      correctIndex: 3,
+      hint: "საქართველო დამოუკიდებლობას პირველად 20-ე საუკუნის დასაწყისში, ხოლო მეორედ 1990-იან წლებში მოიპოვა."
+    },
+    {
+      question: "ვინ იყო მთავრობის თავმჯდომარე ჟორდნაიამდე?",
+      image: "https://server2.intermedia.ge/pictures/original/321/321018.jpg?/mTavrobis-sasaxle-1938w.jpg",
+      options: ["ნოე რამიშვილი", "ვახტანგ კრასნოშტანოვი", "კოტე აფხაზაძე", "ნიკო ნიკოლაძე"],
+      correctIndex: 0,
+      hint: "ის იყო ცნობილი საზოგადო მოღვაწე."
+    },
+    {
+      question: "დამოუკიდებლობის პერიოდში ვინ იყო იუსტიციის მინისტრი?",
+      image: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/%E1%83%A1%E1%83%90%E1%83%A5%E1%83%90%E1%83%A0%E1%83%97%E1%83%95%E1%83%94%E1%83%9A%E1%83%9D%E1%83%A1_%E1%83%98%E1%83%A3%E1%83%A1%E1%83%A2%E1%83%98%E1%83%AA%E1%83%98%E1%83%98%E1%83%A1_%E1%83%A1%E1%83%90%E1%83%9B%E1%83%98%E1%83%9C%E1%83%98%E1%83%A1%E1%83%A2%E1%83%A0%E1%83%9D_%2827428940874%29.jpg/800px-%E1%83%A1%E1%83%90%E1%83%A5%E1%83%90%E1%83%A0%E1%83%97%E1%83%95%E1%83%94%E1%83%9A%E1%83%9D%E1%83%A1_%E1%83%98%E1%83%A3%E1%83%A1%E1%83%A2%E1%83%98%E1%83%AA%E1%83%98%E1%83%98%E1%83%A1_%E1%83%A1%E1%83%90%E1%83%9B%E1%83%98%E1%83%9C%E1%83%98%E1%83%A1%E1%83%A2%E1%83%A0%E1%83%9D_%2827428940874%29.jpg",
+      options: ["შალვა მესხიშვილი", "აკაკი ჩხენკელი", "ივანე ლორთქიფანიძე", "ნოე ჟორდანია"],
+      correctIndex: 0,
+      hint: "ის იყო ახალციხის სეხნია."
+    },
+    {
+      question: "როდის აღიარა ყუბანის რესპუბლიკამ საქართველოს დამოუკიდებლობა ფორმალურად?",
+      image: "https://th.bing.com/th/id/OIP.nV-WcZJeeXbZHhWLopilTwHaE8?o=7&cb=iwp2rm=3&rs=1&pid=ImgDetMain",
+      options: ["1919 წლის 25 სექტემბერს", "1918 წლის 26 სექტემბერს", "1918 წლის 25 სექტემბერს", "1918 წლის 25 ნოემერს"],
+      correctIndex: 2,
+      hint: "საქართველო დამოუკიდებლობას პირველად 20-ე საუკუნის დასაწყისში, ხოლო მეორედ 1990-იან წლებში მოიპოვა."
+    },
+    {
+      question: "როდის მიმდინარეობდა საქართველო-სომხეთის ომი",
+      image: "https://th.bing.com/th/id/OIP.pUGkKolsQ71Wz29HZ2xaHwHaGF?o=7&cb=iwp2rm=3&rs=1&pid=ImgDetMain",
+      options: ["1918 თებერვალი-მარტი", "1920 იანვარ-თებერვალი", "1919 აგვისტო-სექტემბერი", "1918 ნოემბერ-დეკემბერი"],
+      correctIndex: 3,
+      hint: "ეს ომი მოხდა პირველი მსოფლიო ომის შემდეგ, 1918 წელს."
+    },
+    {
+      question: "რომელმა პარტიამ გაიმარჯვა არჩევნებში",
+      image: "https://th.bing.com/th/id/OIP.13_X091Tj61lLIMB8YxdWgHaEK?w=266&h=180&c=7&r=0&o=7&cb=iwp2&pid=1.7&rm=3",
+      options: ["სოციალისტურ-რევოლუციონერები", "სოციალ-დემოკრატები", "სოციალისტური-ფედერალისტები", "ეროვნული-დემოკრატები"],
+      correctIndex: 1,
+      hint: "პარტია მართავდა დემოკრატიულ რესპუბლიკას 1918-1921 წლებში."
+    },
+    {
+      question: "რამდენი დეპუტატით დაკოპლექტდა დამფუძნებელი კრება",
+      image: "https://server2.intermedia.ge/pictures/original/321/321018.jpg?/mTavrobis-sasaxle-1938w.jpg",
+      options: ["130", "120", "150", "135"],
+      correctIndex: 0,
+      hint: "დამფუძნებელ კრებაში დეპუტატების რიცხვი ბევრად აღემატებოდა 130-ს, მაგრამ ნაკლები იყო 150-ზე"
+    }
+  ];
+
+  let currentQuestion = 0;
+  let answered = false;
+  let coins = 15;
+  let correctAnswers = 0;
+  let wrongAnswers = 0;
+
+  const quizContainer = document.getElementById('quiz');
+  const coinCountEl = document.getElementById('coinCount');
+  const hintBox = document.getElementById('hintBox');
+  const overlay = document.getElementById('overlay');
+
+  function updateCoinDisplay() {
+    coinCountEl.textContent = coins + " მონეტა";
+  }
+
+  function loadQuestion() {
+    answered = false;
+    hintBox.classList.remove('show');
+    const q = questions[currentQuestion];
+    quizContainer.innerHTML = `
+      <h1>${q.question}</h1>
+      <img src="${q.image}" alt="question image" class="question-image" />
+      <div class="options">
+        ${q.options.map((opt, i) => `
+          <div class="option" onclick="checkAnswer(${i})">${opt}</div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function checkAnswer(selectedIndex) {
+    if (answered) return;
+    answered = true;
+
+    const optionsEls = document.querySelectorAll('.option');
+    const correctIndex = questions[currentQuestion].correctIndex;
+
+    if (selectedIndex === correctIndex) {
+      optionsEls[selectedIndex].classList.add('correct');
+      coins += 10;
+      correctAnswers++;
+      updateCoinDisplay();
+    } else {
+      optionsEls[selectedIndex].classList.add('incorrect');
+      optionsEls[correctIndex].classList.add('correct');
+      wrongAnswers++;
+    }
+
+    setTimeout(() => {
+      currentQuestion++;
+      if (currentQuestion >= questions.length) {
+        showResults();
+      } else {
+        loadQuestion();
+      }
+    }, 1500);
+  }
+
+  function showResults() {
+  const overlayBox = document.createElement('div');
+  overlayBox.classList.add('overlay');
+  overlayBox.id = 'resultsOverlay';
+  overlayBox.style.display = 'flex';
+
+  overlayBox.innerHTML = `
+    <div class="popup-box">
+      <h2>ქვიზი დასრულდა 🎉</h2>
+      <p>სწორი პასუხები: ${correctAnswers}</p>
+      <p>არასწორი პასუხები: ${wrongAnswers}</p>
+      <div class="popup-buttons">
+        <button onclick="restartQuiz()">თავიდან დაწყება</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlayBox);
+}
+
+
+  function toggleHint() {
+    if (coins < 15) {
+      alert("მონეტები არ ჰყოფნით მინიშნის სანაცვლოდ!");
+      return;
+    }
+    overlay.style.display = 'flex';
+  }
+  function restartQuiz() {
+    const resultsOverlay = document.getElementById('resultsOverlay');
+    if (resultsOverlay) {
+      resultsOverlay.remove();
+    }
+
+    currentQuestion = 0;
+    correctAnswers = 0;
+    wrongAnswers = 0;
+    coins = 15;
+    updateCoinDisplay();
+    loadQuestion();
+  }
+  function useHint() {
+    coins -= 15;
+    updateCoinDisplay();
+    overlay.style.display = 'none';
+    const hint = questions[currentQuestion].hint;
+    hintBox.textContent = hint;
+    hintBox.classList.add('show');
+
+    setTimeout(() => {
+      hintBox.classList.remove('show');
+    }, 5000);
+  }
+
+  function closeOverlay() {
+    overlay.style.display = 'none';
+  }
+
+  updateCoinDisplay();
+  loadQuestion();
+</script>
+
+</body>
+</html>
